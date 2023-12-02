@@ -9,7 +9,7 @@ sudo yum -y update
 
 sudo amazon-linux-extras install java-openjdk11 -y
 
-sudo yum install java-17-amazon-corretto-headless
+sudo yum install java-17-amazon-corretto-headless -y
 
 ==================== Install Jenkins Server ===========================
 
