@@ -45,9 +45,9 @@ sudo yum install git -y
 
 4) sudo systemctl enable docker
 
-5) sudo usermod -a -G docker ec2-user
+5) sudo usermod -a -G docker jenkins-slave1
 
-6) sudo setfacl -m user:ec2-user:rw /var/run/docker.sock
+6) sudo setfacl -m user:jenkins-slave1:rw /var/run/docker.sock
 
 ################### Install  AWS CLI tool on EC2 #############################
 
