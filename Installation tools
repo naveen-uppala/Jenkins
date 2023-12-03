@@ -2,20 +2,34 @@
 
 sudo yum -y update
 
-==================== Install Java 11 ==========================
+==================== Install Java 17 ==========================
 
-sudo amazon-linux-extras install java-openjdk11 -y
+1) sudo yum install java-17-amazon-corretto-headless
 
-==================== Install Maven==========================
+2) java --version
 
-sudo wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
+########################## Download Latest Apache Maven on Amazon Linux 2 ###################
 
-sudo sed -i s/\$releasever/6/g /etc/yum.repos.d/epel-apache-maven.repo
+1) cd /tmp
 
-sudo yum install  apache-maven -y
+2) wget https://dlcdn.apache.org/maven/maven-3/3.9.4/binaries/apache-maven-3.9.4-bin.tar.gz
 
-==================== Configure Specific version of Java==========================
-sudo update-alternatives --config java #pick java 11
+3) sudo tar xf /tmp/apache-maven-*.tar.gz -C /opt
+
+4) sudo ln -s /opt/apache-maven-3.9.4 /opt/maven
+
+5) sudo vi /etc/profile.d/maven.sh
+
+         export JAVA_HOME=/usr/lib/jvm/jre-17
+         export M2_HOME=/opt/maven
+         export MAVEN_HOME=/opt/maven
+         export PATH=${M2_HOME}/bin:${PATH}
+
+6) sudo chmod +x /etc/profile.d/maven.sh
+
+7) source /etc/profile.d/maven.sh
+
+8) mvn -version
 
 ==================== Install GIT ==========================
 
