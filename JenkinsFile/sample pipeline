@@ -1,43 +1,16 @@
 pipeline{
 
-    agent {label '#####'}
-
+      // agent any	
+    agent { label "slave1"}
+    
+    
     stages {
         
-        stage("cloning git repository"){
+        stage("Cloning git repository"){
             steps{
-                git branch: '######', credentialsId: 'git_credentials', url: '########################'
+                git branch: 'main', credentialsId: 'git_credentials', url: 'https://github.com/naveen-uppala/customer.git'
             }
-        }    
-        stage("build"){
-            steps{
-               sh "mvn clean install"
-            }    
-        }
-        
-        stage('Building image') {
-            steps{
-                script {
-                    dockerImage = docker.build "packersmovers:0.0.1"
-                }
-            }
-        }
-        
-        stage('Stop and delete the running container') {
-         steps{  
-             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
-                    sh "docker stop springboot"
-                    sh "docker rm springboot"
-             }    
-            }
-         }
-   
-        stage('RUN IMAGE') {
-        node(''){
-         steps{  
-            sh "docker run -d --name springboot -p 8081:8081  packersmovers:0.0.1 "
-            }
-         }
-         }
-    }
-}
+        } 
+    }    
+
+}    
