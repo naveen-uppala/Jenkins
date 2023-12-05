@@ -24,7 +24,7 @@ pipeline{
 
         stage("SonarQube Scan"){
             steps{
-               sh "mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=OrganizationName_ProjectName"
+               sh "mvn clean verify sonar:sonar -Dsonar.token=dc3ad486e5768160b4ba8f0e3fb6948dd3157616 -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=tcn -Dsonar.projectKey=tcn_customer"
             }    
         }  
         
