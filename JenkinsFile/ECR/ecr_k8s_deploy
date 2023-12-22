@@ -4,7 +4,7 @@ pipeline{
     agent { label "slave-1"}
     
      environment {
-        SONAR_TOKEN =${SONAR_TOKEN_VALUE}     
+     
         AWS_ACCOUNT_ID="######"
         AWS_DEFAULT_REGION="#####"
         IMAGE_NAME="######"
@@ -20,14 +20,7 @@ pipeline{
             steps{
                 git branch: 'main', credentialsId: 'git_credentials', url: '############'
             }
-        }  
-
-        stage("SonarQube Scan"){
-            steps{
-               sh "mvn clean verify sonar:sonar -Dsonar.token=dc3ad486e5768160b4ba8f0e3fb6948dd3157616 -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=tcn -Dsonar.projectKey=tcn_customer"
-            }    
-        }  
-        
+        }    
         stage("Build jar file using maven"){
             steps{
                sh "mvn clean install"
