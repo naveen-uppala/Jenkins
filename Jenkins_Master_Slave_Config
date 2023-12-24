@@ -63,7 +63,7 @@ sudo yum install java-17-amazon-corretto-headless -y
 
 5) sudo su - jenkins-slave1
 
-6) ssh-keygen
+6) ssh-keygen -t ed25519  or ssh-keygen
 
 7) cd .ssh
 
