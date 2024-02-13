@@ -55,13 +55,5 @@ pipeline {
                 }
             }
         }
-
-        stage('K8S deploy') {
-            steps {
-                withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
-                    sh "kustomize edit set image ${REPOSITORY_URI} && /home/jenkins-slave1/bin/kubectl apply -k ."
-                }
-            }
-        }
     }
 }
