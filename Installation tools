@@ -49,6 +49,12 @@ sudo yum install git -y
 
 6) sudo setfacl -m user:jenkins-slave1:rw /var/run/docker.sock
 
+
+##################### Install Trivy for docker scanning docker image ####################
+
+sudo rpm -ivh https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.rpm
+
+
 ################### Install  AWS CLI tool on EC2 #############################
 
 i)   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
