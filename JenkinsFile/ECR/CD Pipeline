@@ -1,0 +1,41 @@
+pipeline{
+
+      // agent any	
+    agent { label "slave1"}
+    
+     environment {
+     
+        AWS_ACCOUNT_ID="533266968694"
+        AWS_DEFAULT_REGION="ap-south-1"
+        IMAGE_NAME="customer"
+        IMAGE_TAG="${currentBuild.number}"
+        //IMAGE_TAG="staticvalue"
+        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
+        
+     }   
+        
+               
+    
+    stages {
+        
+        stage("Cloning the git repository"){
+            steps{
+                git branch: 'main', credentialsId: 'git_credentials', url: 'https://github.com/naveen-uppala/Infra-App-Deployment.git'
+            }
+        }
+        
+        stage('K8S deploy') {
+            
+            steps { dir('Jenkins/App/Backend/customer')
+                
+            {
+                script{
+                withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '')
+            {sh "kustomize edit set image 533266968694.dkr.ecr.ap-south-1.amazonaws.com/customer:default_tag=${REPOSITORY_URI} && kubectl apply -k ."}
+                 }  
+            }
+        }
+        }
+    }    
+    
+}    
