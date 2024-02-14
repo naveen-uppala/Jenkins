@@ -1,59 +1,27 @@
-pipeline {
-    // agent any
-    agent { label 'slave-1' }
+node('slave1') {
+    def AWS_ACCOUNT_ID="533266968694"
+    def AWS_DEFAULT_REGION="ap-south-1"
+    def IMAGE_NAME="customer"
+    def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_NAME}"
+    def CREDENTIAL_ID = 'jenkins_cred'
 
-    environment {
-        SONAR_TOKEN = "########"
-        AWS_ACCOUNT_ID = '######'
-        AWS_DEFAULT_REGION = '#####'
-        IMAGE_NAME = '######'
-        IMAGE_TAG = "${currentBuild.number}"
-        //IMAGE_TAG="staticvalue"
-        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
+    stage('Obtain Build Number') {
+        withCredentials([usernamePassword(credentialsId: "${CREDENTIAL_ID}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+            def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://13.127.114.242:8080/job/HPM_CI/job/customer/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
+            env.buildNumber = buildNumber
+            echo "The latest build number of HPM_CI is ${buildNumber}"
+        }
     }
 
-    stages {
-        stage('Cloning git repository') {
-            steps {
-                git branch: 'main', credentialsId: 'git_credentials', url: '############'
-            }
-        }
-
-        stage('SonarQube Scan') {
-            steps {
-                sh 'mvn clean verify sonar:sonar -Dsonar.token=${SONAR_TOKEN} -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=tcn -Dsonar.projectKey=tcn_customer'
-            }
-        }
-
-        stage('Build jar file using maven') {
-            steps {
-                sh 'mvn clean install'
-            }
-        }
-
-        stage('Build docker image') {
-            steps {
-                script {
-                    dockerImage = docker.build "${IMAGE_NAME}:${IMAGE_TAG}"
-                }
-            }
-        }
-
-        stage('Scan docker image') {
-            steps {
-                sh 'trivy image ${IMAGE_NAME}:${IMAGE_TAG}'
-            }
-        }        
-
-        // Uploading Docker images into AWS ECR
-        stage('Logging into AWS ECR and push docker image') {
-            steps {
-                script {
-                    sh "aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-                    sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${REPOSITORY_URI}"
-                    sh "docker push ${REPOSITORY_URI}"
-                }
-            }
+    stage('K8S deploy') {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: '533266968694', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+        dir('Jenkins/App/Backend/customer') {
+                    script {
+                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
+                            sh "kustomize edit set image ${REPOSITORY_URI}:default_tag=${REPOSITORY_URI}:${buildNumber} && kubectl apply -k ."
+                        }
+                    }
+                   }
         }
     }
 }
