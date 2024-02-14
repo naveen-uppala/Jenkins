@@ -1,27 +1,36 @@
-node('slave1') {
-    def AWS_ACCOUNT_ID="533266968694"
-    def AWS_DEFAULT_REGION="ap-south-1"
-    def IMAGE_NAME="customer"
-    def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_NAME}"
-    def CREDENTIAL_ID = 'jenkins_cred'
+node('jenkins-slave1') {
+    
+    def IMAGE_TAG = "${currentBuild.number}"
+    def GIT_URL = "https://github.com/naveen-uppala/customer.git"
+    def ACCOUNT_ID = "533266968694"
+    def REGION = "ap-south-1"
+    def IMAGE_NAME = "customer"
+    def IMAG_URI = "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
 
-    stage('Obtain Build Number') {
-        withCredentials([usernamePassword(credentialsId: "${CREDENTIAL_ID}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-            def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://13.127.114.242:8080/job/HPM_CI/job/customer/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
-            env.buildNumber = buildNumber
-            echo "The latest build number of HPM_CI is ${buildNumber}"
+    stage("Cloning git repository") {
+        git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
+    }
+
+    stage("Sonar Qube Scan") {
+        sh "mvn clean verify sonar:sonar -Dsonar.token=${SONAR_TOKEN} -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=tcn -Dsonar.projectKey=organizationkey_projectkey"
+    }
+
+    stage("Build jar file using maven") {
+        sh "mvn clean install"
+    }
+
+    stage("Build docker image") {
+        script {
+            dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
         }
     }
 
-    stage('K8S deploy') {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: '533266968694', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-        dir('Jenkins/App/Backend/customer') {
-                    script {
-                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
-                            sh "kustomize edit set image ${REPOSITORY_URI}:default_tag=${REPOSITORY_URI}:${buildNumber} && kubectl apply -k ."
-                        }
-                    }
-                   }
+    stage("Logging into AWS ECR and push docker image") {
+        script {
+            sh "aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
+            sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAG_URI}"
+            sh "docker push ${IMAG_URI}"
         }
     }
+
 }
