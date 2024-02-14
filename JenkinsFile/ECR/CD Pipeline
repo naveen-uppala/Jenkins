@@ -20,7 +20,7 @@ node('jenkins-slave1')
     }
     
     stage('K8S deploy') {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: '533266968694', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
         dir('Jenkins/App/Backend/customer') {
                     script {
                         withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
