@@ -1,41 +1,27 @@
-pipeline{
+node('slave1') {
+    def AWS_ACCOUNT_ID="533266968694"
+    def AWS_DEFAULT_REGION="ap-south-1"
+    def IMAGE_NAME="customer"
+    def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_NAME}"
+    def CREDENTIAL_ID = 'jenkins_cred'
 
-      // agent any	
-    agent { label "slave1"}
-    
-     environment {
-     
-        AWS_ACCOUNT_ID="533266968694"
-        AWS_DEFAULT_REGION="ap-south-1"
-        IMAGE_NAME="customer"
-        IMAGE_TAG="${currentBuild.number}"
-        //IMAGE_TAG="staticvalue"
-        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
-        
-     }   
-        
-               
-    
-    stages {
-        
-        stage("Cloning the git repository"){
-            steps{
-                git branch: 'main', credentialsId: 'git_credentials', url: 'https://github.com/naveen-uppala/Infra-App-Deployment.git'
-            }
+    stage('Obtain Build Number') {
+        withCredentials([usernamePassword(credentialsId: "${CREDENTIAL_ID}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+            def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://13.127.114.242:8080/job/HPM_CI/job/customer/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
+            env.buildNumber = buildNumber
+            echo "The latest build number of HPM_CI is ${buildNumber}"
         }
-        
-        stage('K8S deploy') {
-            
-            steps { dir('Jenkins/App/Backend/customer')
-                
-            {
-                script{
-                withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '')
-            {sh "kustomize edit set image 533266968694.dkr.ecr.ap-south-1.amazonaws.com/customer:default_tag=${REPOSITORY_URI} && kubectl apply -k ."}
-                 }  
-            }
+    }
+
+    stage('K8S deploy') {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: '533266968694', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+        dir('Jenkins/App/Backend/customer') {
+                    script {
+                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
+                            sh "kustomize edit set image ${REPOSITORY_URI}:default_tag=${REPOSITORY_URI}:${buildNumber} && kubectl apply -k ."
+                        }
+                    }
+                   }
         }
-        }
-    }    
-    
-}    
+    }
+}
