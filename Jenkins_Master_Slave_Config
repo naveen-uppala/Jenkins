@@ -43,8 +43,6 @@ sudo yum -y update
 
 ==================== Install Java 11 OR 17 ===============================
 
-sudo amazon-linux-extras install java-openjdk11 -y
-
 sudo yum install java-17-amazon-corretto-headless -y
 
 ===============setup jenkins slave =======================
