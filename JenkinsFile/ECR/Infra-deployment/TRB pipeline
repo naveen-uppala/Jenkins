@@ -12,7 +12,7 @@ secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']])
 
         // Terraform Destroy
         stage('Delete Resources') {
-            dir('Jenkins/Infra/us-east-1'){
+            dir('Infra/us-east-1'){
              sh 'terraform destroy -auto-approve'
             }
         }
