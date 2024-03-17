@@ -1,0 +1,48 @@
+node('slave1') {
+    // Define AWS credentials
+withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
+credentialsId: 'aws_credentials', 
+accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']])
+{
+        // Checkout code from Git repository
+        stage('git checkout') {
+            git branch: 'main', credentialsId: 'git_credentials', url: 'https://github.com/naveen-uppala/Infra-App-Deployment'
+        }
+
+        // Terraform initialization
+        stage('Terraform Init') {
+            dir('Jenkins/Infra/us-east-1'){
+            sh 'terraform init'
+            }
+        }
+
+        // Terraform plan
+        stage('Terraform Plan') {
+            dir('Jenkins/Infra/us-east-1'){
+            sh 'terraform plan -out=tfplan'
+            }
+        }
+
+        // Approval before applying changes
+        stage('Approval') {
+            dir('Jenkins/Infra/us-east-1'){
+            input 'Proceed with Terraform Apply?'
+            }
+        }
+
+        // Terraform apply
+        stage('Terraform Apply') {
+            dir('Jenkins/Infra/us-east-1'){
+            sh 'terraform apply -auto-approve tfplan'
+            }
+        }
+
+        // Terraform output
+        stage('Terraform Output') {
+            dir('Jenkins/Infra/us-east-1'){
+            sh 'terraform output'
+            }
+        }
+    }
+}
