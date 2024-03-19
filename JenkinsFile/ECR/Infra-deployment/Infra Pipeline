@@ -7,13 +7,13 @@ secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']])
 {
         // Checkout code from Git repository
         stage('git checkout') {
-            git branch: 'main', credentialsId: 'git_credentials', url: 'https://github.com/naveen-uppala/Infra-App-Deployment'
+            git branch: 'main', credentialsId: 'git_credentials', url: 'https://github.com/naveen-uppala/Infra-App-Deployment.git'
         }
 
         // Terraform initialization
         stage('Terraform Init') {
             dir('Infra/us-east-1'){
-            sh 'terraform init'
+            sh 'terraform init -force-copy'
             }
         }
 
