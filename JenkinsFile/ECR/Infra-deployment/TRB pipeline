@@ -1,11 +1,14 @@
-node('slave1') {
+node('slave1') 
+{
     // Define AWS credentials
 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
 credentialsId: 'aws_credentials', 
 accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
 secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']])
-def resource_name="abcd"
+
+
 {
+    def module_name="iam_policies_roles"
         // Checkout code from Git repository
         stage('git checkout') {
             git branch: 'main', credentialsId: 'git_credentials', url: 'https://github.com/naveen-uppala/Infra-App-Deployment.git'
@@ -21,7 +24,7 @@ def resource_name="abcd"
         // Terraform plan
         stage('Terraform Destroy Plan') {
             dir('Infra/us-east-1'){
-            sh 'terraform plan -destroy ${resource_name}'
+            sh 'terraform plan -destroy -target module.module_name'
             }
         }
 
@@ -33,9 +36,9 @@ def resource_name="abcd"
         }
 
         // Terraform apply
-        stage('Terraform Destroy') {
+        stage('Terraform Apply') {
             dir('Infra/us-east-1'){
-            sh 'terraform destroy-auto-approve ${resource_name}'
+            sh 'terraform destroy-auto-approve -target module.module_name'
             }
         }
     }
