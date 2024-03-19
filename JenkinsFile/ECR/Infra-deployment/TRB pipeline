@@ -4,16 +4,38 @@ withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
 credentialsId: 'aws_credentials', 
 accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
 secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']])
+def resource_name="abcd"
 {
         // Checkout code from Git repository
         stage('git checkout') {
-            git branch: 'main', credentialsId: 'git_credentials', url: 'https://github.com/naveen-uppala/Infra-App-Deployment'
+            git branch: 'main', credentialsId: 'git_credentials', url: 'https://github.com/naveen-uppala/Infra-App-Deployment.git'
         }
 
-        // Terraform Destroy
-        stage('Delete Resources') {
+        // Terraform initialization
+        stage('Terraform Init') {
             dir('Infra/us-east-1'){
-             sh 'terraform destroy -auto-approve'
+            sh 'terraform init -force-copy'
+            }
+        }
+
+        // Terraform plan
+        stage('Terraform Destroy Plan') {
+            dir('Infra/us-east-1'){
+            sh 'terraform plan -destroy ${resource_name}'
+            }
+        }
+
+        // Approval before applying changes
+        stage('Approval') {
+            dir('Infra/us-east-1'){
+            input 'Proceed with Terraform Destroy?'
+            }
+        }
+
+        // Terraform apply
+        stage('Terraform Destroy') {
+            dir('Infra/us-east-1'){
+            sh 'terraform destroy-auto-approve ${resource_name}'
             }
         }
     }
