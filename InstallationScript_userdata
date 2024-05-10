@@ -13,6 +13,7 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 #!/bin/bash
+sudo su - ec2-user
 yum update -y
 yum upgrade -y
 yum install git -y
