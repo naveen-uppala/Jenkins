@@ -14,10 +14,6 @@ node('jenkins-slave1') {
         sh "mvn clean verify sonar:sonar -Dsonar.token=${SONAR_TOKEN} -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=tcn -Dsonar.projectKey=tcn_customer"
     }
 
-#    stage("Build jar file using maven") {
-#        sh "mvn clean install"
-#    }
-
     stage("Build docker image") {
         script {
             dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
