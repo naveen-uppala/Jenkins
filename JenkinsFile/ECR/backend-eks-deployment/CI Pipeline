@@ -1,10 +1,9 @@
 node('jenkins-slave1') {
-    
-    def IMAGE_TAG = "${currentBuild.number}"
-    def GIT_URL = "https://github.com/naveen-uppala/customer.git"
     def ACCOUNT_ID = "533266968694"
     def REGION = "ap-south-2"
+    def GIT_URL = "https://github.com/naveen-uppala/customer.git"
     def IMAGE_NAME = "customer"
+    def IMAGE_TAG = "${currentBuild.number}"
     def IMAGE_URI = "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
 
     stage("Cloning git repository") {
