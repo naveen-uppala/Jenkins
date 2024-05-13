@@ -23,7 +23,7 @@ node('jenkins-slave1')
         dir('App/Backend/customer') {
                     script {
                         withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
-                            sh "kustomize edit set image ${REPOSITORY_URI}:default_tag=${REPOSITORY_URI}:${buildNumber} && kubectl apply -k ."
+                            sh "helm upgrade release-v1 --install chart_name --set ${REPOSITORY_URI}:${buildNumber}"
                         }
                     }
                    }
