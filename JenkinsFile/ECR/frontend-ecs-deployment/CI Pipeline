@@ -1,7 +1,7 @@
 node('slave1') {
     
     def IMAGE_TAG = "${currentBuild.number}"
-    def GIT_URL = "https://github.com/SandeepKomal/front-end.git"
+    def GIT_URL = "https://github.com/naveen-uppala/frontend.git"
     def ACCOUNT_ID = "637423236688"
     def REGION = "us-east-1"
     def IMAGE_NAME = "frontend"
