@@ -23,6 +23,10 @@ node('slave1') {
         }
     }
 
+    stage("Scan the docker Image"){
+        sh" trivy image ${IMAGE_NAME}:${IMAGE_TAG}"
+    }
+
     stage("Logging into AWS ECR and push docker image") {
          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
         script {
@@ -32,5 +36,4 @@ node('slave1') {
              }
         }
     }
-
 }
