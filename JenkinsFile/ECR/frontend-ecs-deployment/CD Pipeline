@@ -1,14 +1,14 @@
 node('slave1') {
     def AWS_ACCOUNT_ID = "637423236688"
-    def AWS_DEFAULT_REGION = "us-east-1"
+    def REGION = "us-east-2"
     def IMAGE_NAME = "frontend"
-    def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_NAME}"
+    def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}"
     def CREDENTIAL_ID = 'jenkins_cred'
-    def GIT_URL = "https://github.com/SandeepKomal/Infra-App-Deployment.git"
+    def GIT_URL = "https://github.com/naveen-uppala/Infra-App-Deployment.git"
     def ECS_CLUSTER = "frontend"
     def ECS_SERVICE = "frontend-svc"
     def TASK_FAMILY="frontend-td"
-    // def LATEST_REVISION
+
 
 
 
