@@ -5,7 +5,7 @@ node('jenkins-slave1') {
     def ACCOUNT_ID = "533266968694"
     def REGION = "ap-south-1"
     def IMAGE_NAME = "customer"
-    def IMAG_URI = "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
+    def IMAGE_URI = "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
 
     stage("Cloning git repository") {
         git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
@@ -33,8 +33,8 @@ node('jenkins-slave1') {
          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
         script {
             sh "aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
-            sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAG_URI}"
-            sh "docker push ${IMAG_URI}"
+            sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_URI}"
+            sh "docker push ${IMAGE_URI}"
              }
         }
     }
