@@ -1,13 +1,12 @@
 node('slave1') {
     
-    def IMAGE_TAG = "${currentBuild.number}"
-    def GIT_URL = "https://github.com/naveen-uppala/frontend.git"
     def ACCOUNT_ID = "637423236688"
     def REGION = "us-east-1"
+    def GIT_URL = "https://github.com/naveen-uppala/frontend.git"
     def IMAGE_NAME = "frontend"
+    def IMAGE_TAG = "${currentBuild.number}"
     def IMAG_URI = "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
-    def ECS_CLUSTER = "spring"
-    def ECS_SERVICE = "frontend-svc"
+
 
     stage("Cloning git repository") {
         git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
