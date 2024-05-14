@@ -1,7 +1,7 @@
-node('jenkins-slave1')
+node('slave-1')
 {
-    def AWS_ACCOUNT_ID="533266968694"
-    def AWS_REGION="ap-south-1"
+    def AWS_ACCOUNT_ID="851271747310"
+    def AWS_REGION="us-east-2"
     def IMAGE_NAME="customer"
     def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}"
     def GIT_URL = "https://github.com/naveen-uppala/Infra-App-Deployment.git"
@@ -10,7 +10,7 @@ node('jenkins-slave1')
 
     stage('Obtain Build Number') {
         withCredentials([usernamePassword(credentialsId: 'jenkins_cred', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-            def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://65.0.179.34:8080/job/HPM_CI/job/customer/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
+            def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://18.191.250.255:8080/job/HPM_CI/job/customer/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
             env.buildNumber = buildNumber
             echo "The latest build number of HPM_CI is ${buildNumber}"
         }
@@ -20,13 +20,26 @@ node('jenkins-slave1')
         git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
     }
     
+    // stage('update kubeconfig') {
+    //     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) 
+    //     {
+    //         script {
+    //             withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
+    //                 sh "aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME"
+                    
+    //             }
+    //         }
+            
+    //     }
+    // }    
+    
     stage('K8S deploy') {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
         dir('App/Backend/') {
                     script {
                         withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
-                            sh "aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME"
-                            sh "helm upgrade release-v1 --install ${CHART_NAME} --set ${REPOSITORY_URI}:${buildNumber}"
+                            
+                            sh "helm upgrade release-v1 --install ${CHART_NAME} --set image.tag=${buildNumber}"
                     }
                 }
             }
