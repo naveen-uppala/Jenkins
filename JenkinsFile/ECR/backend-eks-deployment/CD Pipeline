@@ -3,7 +3,7 @@ node('jenkins-slave1')
     def AWS_ACCOUNT_ID="533266968694"
     def AWS_REGION="ap-south-1"
     def IMAGE_NAME="customer"
-    def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_NAME}"
+    def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}"
     def GIT_URL = "https://github.com/naveen-uppala/Infra-App-Deployment.git"
     def CHART_NAME ="customer"
     def CLUSTER_NAME="batch18-eks-cluster"
