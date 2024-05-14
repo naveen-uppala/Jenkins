@@ -1,11 +1,12 @@
 node('jenkins-slave1')
 {
     def AWS_ACCOUNT_ID="533266968694"
-    def AWS_DEFAULT_REGION="ap-south-1"
+    def AWS_REGION="ap-south-1"
     def IMAGE_NAME="customer"
     def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_NAME}"
     def GIT_URL = "https://github.com/naveen-uppala/Infra-App-Deployment.git"
     def CHART_NAME ="customer"
+    def CLUSTER_NAME="batch18-eks-cluster"
 
     stage('Obtain Build Number') {
         withCredentials([usernamePassword(credentialsId: 'jenkins_cred', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
@@ -24,6 +25,7 @@ node('jenkins-slave1')
         dir('App/Backend/') {
                     script {
                         withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
+                            sh "aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME"
                             sh "helm upgrade release-v1 --install ${CHART_NAME} --set ${REPOSITORY_URI}:${buildNumber}"
                     }
                 }
