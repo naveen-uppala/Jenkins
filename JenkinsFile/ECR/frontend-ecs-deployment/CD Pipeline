@@ -1,12 +1,12 @@
-node('slave1') {
-    def AWS_ACCOUNT_ID = "637423236688"
+node('slave-1') {
+    def AWS_ACCOUNT_ID = "851271747310"
     def REGION = "us-east-2"
     def IMAGE_NAME = "frontend"
     def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}"
     def CREDENTIAL_ID = 'jenkins_cred'
     def GIT_URL = "https://github.com/naveen-uppala/Infra-App-Deployment.git"
-    def ECS_CLUSTER = "frontend"
-    def ECS_SERVICE = "frontend-svc"
+    def ECS_CLUSTER = "batch18-ecs-cluster"
+    def ECS_SERVICE = "frontend"
     def TASK_FAMILY="frontend-td"
 
 
@@ -14,7 +14,7 @@ node('slave1') {
 
     stage('Obtain Build Number') {
         withCredentials([usernamePassword(credentialsId: "${CREDENTIAL_ID}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-            def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://52.70.110.173:8080/job/FE_CI/job/frontend/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
+            def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://18.191.250.255:8080/job/HPM_CI/job/frontend/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
             env.buildNumber = buildNumber
             echo "The latest build number of FE_CI is ${buildNumber}"
         }
@@ -24,7 +24,7 @@ node('slave1') {
         git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
     }
 
-    stage('ECS Deploy') {
+    stage('Create Task Definition') {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
             sh """
                 aws ecs register-task-definition \
@@ -43,7 +43,7 @@ node('slave1') {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
             def LATEST_REVISION = sh(script: 'aws ecs describe-task-definition --task-definition frontend-td --query "taskDefinition.revision" --output text', returnStdout: true)
             echo "latest task definition version is ${LATEST_REVISION}"
-            sh "aws ecs update-service --cluster frontend --service frontend-svc --task-definition ${TASK_FAMILY}:${LATEST_REVISION}"
+            sh "aws ecs update-service --cluster ${ECS_CLUSTER} --service frontend-svc --task-definition ${TASK_FAMILY}:${LATEST_REVISION}"
         }
     }
 }
