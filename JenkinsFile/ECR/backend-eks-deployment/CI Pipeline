@@ -1,37 +1,53 @@
-node('jenkins-slave1') {
-    def ACCOUNT_ID = "533266968694"
-    def REGION = "ap-south-2"
+node('slave-1') {
+    def ACCOUNT_ID = "851271747310"
+    def REGION = "us-east-2"
     def GIT_URL = "https://github.com/naveen-uppala/customer.git"
     def IMAGE_NAME = "customer"
     def IMAGE_TAG = "${currentBuild.number}"
     def IMAGE_URI = "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
 
-    stage("Cloning git repository") {
-        git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
-    }
-
-    stage("Sonar Qube Scan") {
-        sh "mvn clean verify sonar:sonar -Dsonar.token=${SONAR_TOKEN} -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=tcn -Dsonar.projectKey=tcn_customer"
-    }
-
-    stage("Build docker image") {
-        script {
-            dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+    try {
+        
+        stage("Cloning git repository") {
+            git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
         }
-    }
 
-    stage("Scan the docker Image"){
-        sh" trivy image ${IMAGE_NAME}:${IMAGE_TAG}"
-    }
-
-    stage("Logging into AWS ECR and push docker image") {
-         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-        script {
-            sh "aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
-            sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_URI}"
-            sh "docker push ${IMAGE_URI}"
-             }
+        stage("Sonar Qube Scan") {
+            sh "mvn clean verify sonar:sonar -Dsonar.token=${SONAR_TOKEN} -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=tcn -Dsonar.projectKey=tcn_customer"
         }
+
+        stage("Build docker image") {
+            script {
+                dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+            }
+        }
+
+        stage("Scan the docker Image") {
+            sh "trivy image ${IMAGE_NAME}:${IMAGE_TAG}"
+        }
+
+        stage("Logging into AWS ECR and push docker image") {
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                script {
+                    sh "aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
+                    sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_URI}"
+                    sh "docker push ${IMAGE_URI}"
+                }
+            }
+        }
+        
+    }
+    
+    finally {
+            echo "Performing cleanup actions..."
+            cleanWs()
+            // Scripted cleanup for directories
+            dir("${env.WORKSPACE}@tmp") {
+                deleteDir()
+            }
+            
+        //  Cleanup all the unused docker images and containers
+        sh "docker system prune -a -f"    
     }
 
 }
