@@ -47,5 +47,5 @@ try {
         //  Cleanup all the unused docker images and containers
         sh "docker system prune -a -f"    
 
-    } //finally closed
+    } //finally block closed
 }
