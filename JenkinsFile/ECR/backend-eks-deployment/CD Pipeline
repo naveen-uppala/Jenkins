@@ -8,6 +8,7 @@ node('slave-1')
     def CHART_NAME ="customer"
     def CLUSTER_NAME="batch18-eks-cluster"
 
+try {     
     stage('Obtain Build Number') {
         withCredentials([usernamePassword(credentialsId: 'jenkins_cred', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
             def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://18.191.250.255:8080/job/HPM_CI/job/customer/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
@@ -19,30 +20,32 @@ node('slave-1')
     stage("Cloning git repository") {
         git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
     }
-    
-    // stage('update kubeconfig') {
-    //     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) 
-    //     {
-    //         script {
-    //             withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
-    //                 sh "aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME"
-                    
-    //             }
-    //         }
-            
-    //     }
-    // }    
-    
+     
     stage('K8S deploy') {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
         dir('App/Backend/') {
                     script {
                         withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
-                            
+                            sh "aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME"
                             sh "helm upgrade release-v1 --install ${CHART_NAME} --set image.tag=${buildNumber}"
                     }
                 }
             }
         }
     }
+
+} //try block closed
+
+    finally {
+            echo "Performing cleanup actions..."
+            cleanWs()
+            // Scripted cleanup for directories
+            dir("${env.WORKSPACE}@tmp") {
+                deleteDir()
+            }
+            
+        //  Cleanup all the unused docker images and containers
+        sh "docker system prune -a -f"    
+
+    } //finally closed
 }
