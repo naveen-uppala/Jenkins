@@ -2,48 +2,104 @@ node('slave-1') {
     def AWS_ACCOUNT_ID = "851271747310"
     def REGION = "us-east-2"
     def IMAGE_NAME = "frontend"
-    def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}"
-    def CREDENTIAL_ID = 'jenkins_cred'
+    def JENKINS_CREDENTIALS_ID = "jenkins_cred"
+    def AWS_CREDENTIALS_ID = "aws_credentials"
     def GIT_URL = "https://github.com/naveen-uppala/Infra-App-Deployment.git"
     def ECS_CLUSTER = "batch18-ecs-cluster"
     def ECS_SERVICE = "frontend"
     def TASK_FAMILY="frontend-td"
-
+    def TARGET_GROUP_NAME= "${ECS_SERVICE}-TG"
+    def VPC_ID="vpc-0981833da8aa7144d"
+    def TASK_DEFINITION_FILE="App/Frontend/task-definition.json"
+    def SERVICE_FILE="App/Frontend/service.json"
 
 
 
     stage('Obtain Build Number') {
-        withCredentials([usernamePassword(credentialsId: "${CREDENTIAL_ID}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-            def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://18.191.250.255:8080/job/HPM_CI/job/frontend/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
+        withCredentials([usernamePassword(credentialsId: "${JENKINS_CREDENTIALS_ID}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+            def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://3.17.191.79:8080/job/HPM_CI/job/frontend/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
             env.buildNumber = buildNumber
             echo "The latest build number of FE_CI is ${buildNumber}"
         }
     }
 
+ 
+
     stage("Cloning git repository") {
         git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
     }
 
-    stage('Create Task Definition') {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
-            sh """
-                aws ecs register-task-definition \
-                --network-mode awsvpc \
-                --family frontend-td \
-                --container-definitions '[{"name":"frontend","image":"${REPOSITORY_URI}:${buildNumber}", "portMappings":[{"containerPort": 80,"hostPort": 80}], "memory":10,"essential":true}]' \
-                --requires-compatibilities FARGATE \
-                --cpu 256 \
-                --memory 512 \
-                --execution-role-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole
-            """
-        }
-    }
+    stage('Register task-definition') {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS_ID}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+        dir('App/Frontend/') {
+                script {
+                def FINAL_IMAGE = "${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${buildNumber}"    
+                echo "Image to be updated in task-definition file is ${FINAL_IMAGE}"
     
-       stage('ECS Deploy') {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
-            def LATEST_REVISION = sh(script: 'aws ecs describe-task-definition --task-definition frontend-td --query "taskDefinition.revision" --output text', returnStdout: true)
-            echo "latest task definition version is ${LATEST_REVISION}"
-            sh "aws ecs update-service --cluster ${ECS_CLUSTER} --service frontend-svc --task-definition ${TASK_FAMILY}:${LATEST_REVISION}"
+                // Read the contents of the service file
+                def taskdefinitionContent = readFile(TASK_DEFINITION_FILE).trim()
+    
+                // Update the service file with the target group ARN
+                taskdefinitionContent = FINAL_IMAGE.replace('image-placeholder', FINAL_IMAGE)
+    
+                // Write the updated content back to the service file
+                writeFile file: TASK_DEFINITION_FILE, text: taskdefinitionContent
+    
+                echo "Service definition file updated with target group ARN"
+                    sh "aws ecs register-task-definition --cli-input-json file://App/Frontend/task-definition.json"
+                  
+                        }
+                    }   
+                }
+            }
+    
+        stage('Create Target Group') {
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS_ID}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+             dir('App/Frontend/') {    
+                // Create the target group
+                def targetGroupArn = sh(script: """
+                    aws elbv2 create-target-group \
+                        --name ${TARGET_GROUP_NAME} \
+                        --protocol HTTP \
+                        --port 80 \
+                        --vpc-id ${VPC_ID} \
+                        --query 'TargetGroups[0].TargetGroupArn' \
+                        --output text
+                """, returnStdout: true).trim()
+    
+                echo "Target group created with ARN: ${targetGroupArn}"
+    
+                // Read the contents of the service file
+                def serviceContent = readFile(service.json).trim()
+    
+                // Update the service file with the target group ARN
+                serviceContent = serviceContent.replace('target-group-arn-placeholder', targetGroupArn)
+    
+                // Write the updated content back to the service file
+                writeFile file: SERVICE_FILE, text: serviceContent
+    
+                echo "Service definition file updated with target group ARN"
+            }
+            
+        }
+    
+    }
+
+        stage('Deploy ECS Service') {
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS_ID}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                // Check if the service exists
+                def serviceExists = sh(script: """
+                    aws ecs describe-services --cluster ${CLUSTER_NAME} --services ${SERVICE_NAME} --query 'services[0].status' --output text
+                """, returnStatus: true) == 0
+    
+                // Deploy the service using the AWS CLI
+                if (serviceExists) {
+                    echo "Service exists. Updating service..."
+                    sh "aws ecs update-service --cli-input-json file://${SERVICE_FILE}"
+                } else {
+                    echo "Service does not exist. Creating service..."
+                    sh "aws ecs create-service --cli-input-json file://${SERVICE_FILE}"
+                }
+            }
         }
     }
-}
