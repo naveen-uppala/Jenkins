@@ -1,4 +1,4 @@
-# = Install Jenkins Server on EC2 Machine(Master Node) =
+#  Install Jenkins Server on EC2 Machine(Master Node) 
 
 ### Update Linux Packages
 
