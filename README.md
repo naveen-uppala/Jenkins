@@ -1,4 +1,4 @@
-# = Install Jenkins Server on EC2 Machine(Master Node) =
+## Install Jenkins Server on EC2 Machine(Master Node) 
 
 ### Update Linux Packages
 
@@ -129,6 +129,7 @@ cat id_ed25519
 ```
 #### Create the credentials on the Jenkins Master using this keypair and username(jenkins-slave1)
 
-#### Note: Allocate 200MB disk space for master and slave in Jenkins dashboard
+#### Note: Allocate the below disk space for master and slave in Jenkins dashboard
 
-![Free space Threshold Jenkins](https://github.com/SandeepKomal/Jenkins/assets/99358567/2a2f4df0-1483-4350-b171-72eddca7c066)
+![jenkins readme](https://github.com/naveen-uppala/Jenkins/assets/99358567/2de0de8a-11dd-4ad0-8c68-14cb1bfd1a7d)
+
