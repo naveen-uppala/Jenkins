@@ -45,7 +45,10 @@ node('slave-1') {
             writeFile file: TASK_DEFINITION_FILE, text: taskdefinitionContent
 
             def taskDefinitionArn = sh(script: """
-            echo '${taskdefinitionContent}' | aws ecs register-task-definition --cli-input-json file://App/Frontend/task-definition.json --query 'taskDefinition.taskDefinitionArn' --output text
+            aws ecs register-task-definition \
+            --cli-input-json file://App/Frontend/task-definition.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text
         """, returnStdout: true).trim()
             env.taskDefinitionArn = taskDefinitionArn
                 
