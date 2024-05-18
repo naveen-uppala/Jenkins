@@ -4,7 +4,7 @@ node('slave1') {
     def GIT_URL = "https://github.com/naveen-uppala/frontend.git"
     def IMAGE_NAME = "frontend"
     def IMAGE_TAG = "${currentBuild.number}"
-    def IMAG_URI = "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
+    def IMAGE_URI = "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
 
 
     stage("Cloning git repository") {
@@ -30,7 +30,7 @@ node('slave1') {
         script {
             sh "aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
             sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAG_URI}"
-            sh "docker push ${IMAG_URI}"
+            sh "docker push ${IMAGE_URI}"
              }
         }
     }
