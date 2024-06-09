@@ -25,15 +25,27 @@ try {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
         dir('App/Backend/') {
                     script {
-                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kube_config', namespace: '', serverUrl: '') {
+                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kubeconfig_credentails', namespace: '', serverUrl: '') {
                             sh "aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME"
-                            sh "helm upgrade release-v1 --install ${CHART_NAME} --set image.tag=${buildNumber}"
+                            sh "helm upgrade release-${CHART_NAME} --install ${CHART_NAME} --set image.tag=${buildNumber}"
                     }
                 }
             }
         }
     }
-
+    
+    stage('Ingress deployment') {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+        dir('App/Backend/') {
+                    script {
+                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kubeconfig_credentails', namespace: '', serverUrl: '') {
+                            sh "kubectl apply -f Ingress/ingress.yaml"
+                    }
+                }
+            }
+        }
+    }
+    
 } //try block closed
 
     finally {
