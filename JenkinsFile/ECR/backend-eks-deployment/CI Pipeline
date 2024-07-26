@@ -39,12 +39,8 @@ node('slave-1') {
     }
     
     finally {
-            echo "Performing cleanup actions..."
-            cleanWs()
-            // Scripted cleanup for directories
-            dir("${env.WORKSPACE}@tmp") {
-                deleteDir()
-            }
+        echo "Performing cleanup actions..."
+        cleanWs()
             
         //  Cleanup all the unused docker images and containers
         sh "docker system prune -a -f"    
