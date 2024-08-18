@@ -10,7 +10,7 @@ node('slave-1')
 
 try {     
     stage('Obtain Build Number') {
-        withCredentials([usernamePassword(credentialsId: 'jenkins_cred', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+        withCredentials([usernamePassword(credentialsId: 'jenkins_credentials', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
             def buildNumber = sh(script: "curl -s -u ${USERNAME}:${PASSWORD} 'http://3.17.191.79:8080/job/HPM_CI/job/customer/lastSuccessfulBuild/buildNumber'", returnStdout: true).trim()
             env.buildNumber = buildNumber
             echo "The latest build number of HPM_CI is ${buildNumber}"
@@ -25,7 +25,7 @@ try {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
         dir('App/Backend/') {
                     script {
-                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kubeconfig_credentails', namespace: '', serverUrl: '') {
+                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kubeconfig_credentials', namespace: '', serverUrl: '') {
                             sh "aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME"
                             sh "helm upgrade release-${CHART_NAME} --install ${CHART_NAME} --set image.tag=${buildNumber}"
                     }
@@ -38,7 +38,7 @@ try {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
         dir('App/Backend/') {
                     script {
-                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kubeconfig_credentails', namespace: '', serverUrl: '') {
+                        withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kubeconfig_credentials', namespace: '', serverUrl: '') {
                             sh "kubectl apply -f Ingress/ingress.yaml"
                     }
                 }
