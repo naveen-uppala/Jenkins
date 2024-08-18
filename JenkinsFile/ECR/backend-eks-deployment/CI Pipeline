@@ -2,6 +2,7 @@ node('slave-1') {
     def ACCOUNT_ID = "851271747310"
     def REGION = "us-east-2"
     def GIT_URL = "https://github.com/naveen-uppala/customer.git"
+    def BRANCH  =  "main"
     def IMAGE_NAME = "customer"
     def IMAGE_TAG = "${currentBuild.number}"
     def IMAGE_URI = "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
@@ -9,7 +10,7 @@ node('slave-1') {
     try {
         
         stage("Cloning git repository") {
-            git branch: 'main', credentialsId: 'git_credentials', url: GIT_URL
+            git branch: BRANCH, credentialsId: 'git_credentials', url: GIT_URL
         }
 
         stage("Sonar Qube Scan") {
