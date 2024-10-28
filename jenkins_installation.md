@@ -65,19 +65,13 @@ sudo yum install java-17-amazon-corretto-headless -y
 sudo su
 ```
 ```
-sudo useradd jenkins-slave1
-```
-```
-passwd jenkins-slave1 # set password for user jenkins-slave1
-```
-```
 sudo vi /etc/sudoers
 ```
 ```
-jenkins-slave1 ALL=(ALL) NOPASSWD: ALL
+ec2-user ALL=(ALL) NOPASSWD: ALL
 ```
 ```
-sudo su - jenkins-slave1
+sudo su - ec2-user
 ```
 ```
 ssh-keygen -t ed25519  or ssh-keygen
