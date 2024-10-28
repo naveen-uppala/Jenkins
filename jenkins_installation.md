@@ -113,7 +113,7 @@ sudo chmod 700 known_hosts
 
 #### Note: Connect to your slave node
 ```
-sudo su - jenkins-slave1
+sudo su - ec2-user
 ```
 ```
 cd .ssh
