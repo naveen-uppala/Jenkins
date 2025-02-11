@@ -1,3 +1,5 @@
+########################  Declarative Syntax #################################
+
 pipeline{
 
       // agent any	
@@ -14,3 +16,15 @@ pipeline{
     }    
 
 }    
+
+######################## Scripted Syntax #################################
+
+
+node('Slave-1') {
+
+        stage("Cloning git repository") {
+            git branch: 'main', credentialsId: 'github_credentials', url: 'https://github.com/naveen-uppala/customer.git'
+        }
+
+
+}
