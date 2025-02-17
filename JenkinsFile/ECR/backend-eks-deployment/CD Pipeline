@@ -39,6 +39,7 @@ try {
         dir('App/Backend/') {
                     script {
                         withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kubeconfig_credentials', namespace: '', serverUrl: '') {
+                            sh "aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME"
                             sh "kubectl apply -f Ingress/ingress.yaml"
                     }
                 }
